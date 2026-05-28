@@ -81,16 +81,14 @@ func (m *Middleware) Auth() gin.HandlerFunc {
 func (m *Middleware) Require(perm string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, _ := c.Get("sso_user_id")
-		tenantID, _ := c.Get("sso_tenant_id")
 
-		uid, ok1 := userID.(uint64)
-		tid, ok2 := tenantID.(uint64)
-		if !ok1 || !ok2 {
+		uid, ok := userID.(uint64)
+		if !ok {
 			abortJSON(c, http.StatusUnauthorized, "user context missing, is Auth() middleware applied?")
 			return
 		}
 
-		allowed, err := m.client.Enforce(c.Request.Context(), uid, tid, perm)
+		allowed, err := m.client.Enforce(c.Request.Context(), uid, perm)
 		if err != nil {
 			abortJSON(c, http.StatusBadGateway, "permission check failed")
 			return
@@ -108,17 +106,15 @@ func (m *Middleware) Require(perm string) gin.HandlerFunc {
 func (m *Middleware) RequireAny(perms ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, _ := c.Get("sso_user_id")
-		tenantID, _ := c.Get("sso_tenant_id")
 
-		uid, ok1 := userID.(uint64)
-		tid, ok2 := tenantID.(uint64)
-		if !ok1 || !ok2 {
+		uid, ok := userID.(uint64)
+		if !ok {
 			abortJSON(c, http.StatusUnauthorized, "user context missing")
 			return
 		}
 
 		for _, perm := range perms {
-			allowed, err := m.client.Enforce(c.Request.Context(), uid, tid, perm)
+			allowed, err := m.client.Enforce(c.Request.Context(), uid, perm)
 			if err == nil && allowed {
 				c.Next()
 				return
@@ -133,17 +129,15 @@ func (m *Middleware) RequireAny(perms ...string) gin.HandlerFunc {
 func (m *Middleware) RequireAll(perms ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, _ := c.Get("sso_user_id")
-		tenantID, _ := c.Get("sso_tenant_id")
 
-		uid, ok1 := userID.(uint64)
-		tid, ok2 := tenantID.(uint64)
-		if !ok1 || !ok2 {
+		uid, ok := userID.(uint64)
+		if !ok {
 			abortJSON(c, http.StatusUnauthorized, "user context missing")
 			return
 		}
 
 		for _, perm := range perms {
-			allowed, err := m.client.Enforce(c.Request.Context(), uid, tid, perm)
+			allowed, err := m.client.Enforce(c.Request.Context(), uid, perm)
 			if err != nil {
 				abortJSON(c, http.StatusBadGateway, "permission check failed")
 				return
