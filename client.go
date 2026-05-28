@@ -183,14 +183,14 @@ func (c *Client) Sync(ctx context.Context) error {
 func (c *Client) Synced() bool { return c.synced.Load() }
 
 // Enforce checks if a user has a specific permission.
-func (c *Client) Enforce(ctx context.Context, userID uint64, perm string) (bool, error) {
+func (c *Client) Enforce(ctx context.Context, userID, tenantID uint64, perm string) (bool, error) {
 	// Check cache
 	if allowed, ok := c.cache.Get(userID, perm); ok {
 		return allowed, nil
 	}
 
 	// Query SSO server
-	allowed, err := c.transport.Enforce(ctx, userID, perm)
+	allowed, err := c.transport.Enforce(ctx, userID, tenantID, perm)
 	if err != nil {
 		if c.cfg.FallbackOpen {
 			c.log.Warn("SSO unreachable, fallback open", "perm", perm, "err", err)
@@ -205,8 +205,8 @@ func (c *Client) Enforce(ctx context.Context, userID uint64, perm string) (bool,
 
 // UserInfo retrieves real-time user information from the SSO server.
 // Use this to check user status, roles, etc. beyond what's in the JWT.
-func (c *Client) UserInfo(ctx context.Context, userID uint64) (*UserInfoData, error) {
-	return c.transport.UserInfo(ctx, userID)
+func (c *Client) UserInfo(ctx context.Context, userID, tenantID uint64) (*UserInfoData, error) {
+	return c.transport.UserInfo(ctx, userID, tenantID)
 }
 
 // ValidateToken validates a JWT token and returns claims.

@@ -57,6 +57,7 @@ type EnforceReq struct {
 	AppKey     string `json:"app_key"`
 	AppSecret  string `json:"app_secret"`
 	UserID     uint64 `json:"user_id"`
+	TenantID   uint64 `json:"tenant_id,omitempty"`
 	Permission string `json:"permission"`
 }
 
@@ -83,6 +84,7 @@ type UserInfoReq struct {
 	AppKey    string `json:"app_key"`
 	AppSecret string `json:"app_secret"`
 	UserID    uint64 `json:"user_id"`
+	TenantID  uint64 `json:"tenant_id,omitempty"`
 }
 
 // UserInfoResp is the response from user info endpoint.
@@ -127,10 +129,11 @@ func (t *Transport) Sync(ctx context.Context, perms []Permission, permHash strin
 }
 
 // Enforce checks if a user has a permission.
-func (t *Transport) Enforce(ctx context.Context, userID uint64, perm string) (bool, error) {
+// tenantID is optional (pass 0 to let server infer from app auth).
+func (t *Transport) Enforce(ctx context.Context, userID, tenantID uint64, perm string) (bool, error) {
 	body, err := json.Marshal(EnforceReq{
 		AppKey: t.appKey, AppSecret: t.appSecret,
-		UserID: userID, Permission: perm,
+		UserID: userID, TenantID: tenantID, Permission: perm,
 	})
 	if err != nil {
 		return false, err
@@ -158,11 +161,13 @@ func (t *Transport) FetchPublicKey(ctx context.Context) (string, error) {
 }
 
 // UserInfo retrieves real-time user information from the SSO server.
-func (t *Transport) UserInfo(ctx context.Context, userID uint64) (*UserInfoData, error) {
+// tenantID is optional (pass 0 to let server infer from app auth).
+func (t *Transport) UserInfo(ctx context.Context, userID, tenantID uint64) (*UserInfoData, error) {
 	body, err := json.Marshal(UserInfoReq{
 		AppKey:    t.appKey,
 		AppSecret: t.appSecret,
 		UserID:    userID,
+		TenantID:  tenantID,
 	})
 	if err != nil {
 		return nil, err
